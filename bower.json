@@ -1,0 +1,32 @@
+{
+  "name": "famous-bling",
+  "version": "0.0.1",
+  "homepage": "https://github.com/IjzerenHein/famous-bling",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/IjzerenHein/famous-bling.git"
+  },
+  "authors": [
+    "Hein Rutjes <hrutjes@gmail.com>"
+  ],
+  "description": "Surface templates and styles similar to bootstrap for famo.us",
+  "keywords": [
+    "famo.us",
+    "famous",
+    "bling",
+    "famous-bling",
+    "famous-bootstrap",
+    "bootstrap"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "tests",
+    "examples",
+    "docs",
+    "Gruntfile.js",
+    "package.json"
+  ]
+}

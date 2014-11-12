@@ -1,0 +1,74 @@
+{
+  "name": "famous-bling",
+  "version": "0.0.1",
+  "homepage": "https://github.com/IjzerenHein/famous-bling",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/IjzerenHein/famous-bling.git"
+  },
+  "browserify": {
+    "transform": [
+      "deamdify",
+      "famousify",
+      "brfs"
+    ]
+  },
+  "author": {
+    "name": "Hein Rutjes <hrutjes@gmail.com>"
+  },
+  "description": "Surface templates and styles similar to bootstrap for famo.us",
+  "keywords": [
+    "famo.us",
+    "famous",
+    "bling",
+    "famous-bling",
+    "famous-bootstrap",
+    "bootstrap"
+  ],
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/IjzerenHein/famous-bling/blob/master/LICENSE"
+    }
+  ],
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/IjzerenHein/famous-bling/issues"
+  },
+  "engines": {
+    "node": ">= 0.10.0"
+  },
+  "devDependencies": {
+    "brfs": "latest",
+    "browserify": "latest",
+    "css-loader": "^0.7.0",
+    "deamdify": "latest",
+    "famous": "^0.3.0",
+    "famous-flex": "^0.1.0",
+    "famous-polyfills": "^0.3.0",
+    "famousify": "latest",
+    "fastclick": "^1.0.3",
+    "grunt": "latest",
+    "grunt-eslint": "latest",
+    "grunt-jscs": "latest",
+    "grunt-jsdoc-to-markdown": "latest",
+    "html-loader": "^0.2.2",
+    "imports-loader": "^0.6.3",
+    "json-loader": "^0.5.1",
+    "less": "^1.7.4",
+    "less-loader": "^0.7.5",
+    "load-grunt-config": "^0.12.0",
+    "optimist": "^0.6.1",
+    "script-loader": "^0.6.0",
+    "style-loader": "^0.6.4",
+    "time-grunt": "^0.4.0",
+    "url-loader": "^0.5.5",
+    "webpack": "latest",
+    "webpack-cordova-plugin": "latest",
+    "webpack-dev-server": "latest"
+  },
+  "files": [
+    "src",
+    "LICENSE"
+  ]
+}

@@ -1,0 +1,16 @@
+body, div {
+    font-family: "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+    font-weight: normal;
+}
+body {
+  background: white;
+}
+
+
+.bl-list-item-text {
+  
+}
+
+.bl-list-item-back {
+  border-bottom: 1px solid #EEEEEE;
+}
