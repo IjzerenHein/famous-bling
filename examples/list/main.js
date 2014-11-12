@@ -18,7 +18,7 @@ define(function(require) {
     require('famous/core/famous.css');
     require('./styles.css');
     require('./index.html');
-    require('../../bower_components/ionicons/css/ionicons.css');
+    require('ionicons/css/ionicons.css');
     //</webpack>
 
     // Fast-click
@@ -29,10 +29,8 @@ define(function(require) {
     var Engine = require('famous/core/Engine');
     var Surface = require('famous/core/Surface');
     var ViewSequence = require('famous/core/ViewSequence');
-    var LayoutController = require('famous-flex/LayoutController');
-    var LayoutDockHelper = require('famous-flex/helpers/LayoutDockHelper');
     var ScrollView = require('famous-flex/ScrollView');
-    //var Bling = require('../../src/bling');
+    var Bling = require('../../src/Bling');
 
     //
     // Create main scroll-view
@@ -45,56 +43,41 @@ define(function(require) {
         useContainer: true
     });
     mainContext.add(scrollView);
+    var listItem;
 
-    function ListItemLayout(context, options) {
-        var size = context.size;
-        var dock = new LayoutDockHelper(context, options);
-        dock.fill('back');
-        dock.margins([5, 10]);
-        var accessory = context.get('accessory');
-        if (accessory) {
-            var accessorySize = context.resolveSize(accessory, size);
-            dock.right(accessory, accessorySize[0], 1);
-            dock.right(undefined, 10);
-        }
-        dock.fill('text', 1);
-    }
-
-    function _createListItem(options) {
-        var lc = new LayoutController({
-            size: options ? options.size : undefined,
-            layout: ListItemLayout,
-            layoutOptions: options,
-            dataSource: {
-                text: new Surface({
-                    classes: ['bl-list-item-text'],
-                    content: options.text
-                }),
-                back: new Surface({
-                    classes: ['bl-list-item-back']
-                }),
-                accessory: new Surface({
-                    classes: ['icon', 'ion-chevron-right'],
-                    size: [30, undefined]
-                })
-            }
-        });
-        //lc._dataSource.back.pipe(scrollView);
-        //lc._dataSource.text.pipe(scrollView);
-        //lc._dataSource.accessory.pipe(scrollView);
-        return lc;
+    function _add(listItem) {
+        viewSequence.push(listItem);
+        //listItem.pipe(scrollView);
     }
 
     //
     // Add list items
-    //
-    viewSequence.push(_createListItem({
-        text: 'simple list item',
-        size: [undefined, 50]
-    }));
-    /*viewSequence.push(Bling.list.item({
-        text: 'simple list item',
-        size: [undefined, 50]
-    }));*/
+    //)
+    listItem = new Bling.List.Item({ accessoryType: Bling.List.Item.AccessoryType.CHEVRON });
+    listItem.text.setContent('text + chevron');
+    listItem.on('click', function() {
+        listItem.detail.setContent('this is a detailed description');
+    }.bind(listItem));
+    _add(listItem)
 
+    listItem = new Bling.List.Item({ accessoryType: Bling.List.Item.AccessoryType.CHECK });
+    listItem.text.setContent('text + checkmark');
+    listItem.detail.setContent('this is a detailed description');
+    listItem.on('click', function() {
+        listItem.setOptions({size: [undefined, 100]});
+    }.bind(listItem));
+    _add(listItem)
+
+    listItem = new Bling.List.Item();
+    listItem.text.setContent('text + custom accessory');
+    listItem.accessory = new Surface({
+        size: [30, undefined],
+    });
+    _add(listItem)
+
+    for (var i = 0; i < 1; i++) {
+        listItem = new Bling.List.Item({ accessoryType: Bling.List.Item.AccessoryType.CHECK });
+        listItem.text.setContent('text + checkmark');
+        _add(listItem)
+    }
 });

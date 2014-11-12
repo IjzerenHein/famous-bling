@@ -28,5 +28,8 @@
     "docs",
     "Gruntfile.js",
     "package.json"
-  ]
+  ],
+  "devDependencies": {
+    "ionicons": "~1.5.2"
+  }
 }
