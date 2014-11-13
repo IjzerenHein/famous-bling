@@ -187,7 +187,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports =
-		"body, div {\n    font-family: \"HelveticaNeue\", \"Helvetica Neue\", Helvetica, Arial, \"Lucida Grande\", sans-serif;\n    font-weight: normal;\n}\nbody {\n \tbackground: white;\n}\n\n\n\n.bl-list-item-back {\n \tborder-bottom: 1px solid #EEEEEE;\n}\n\n.bl-list-item-detail {\n\tfont-size: 12px;  \n\tfont-weight: 100;\n}\n\n.bl-list-item-text {\n\tfont-size: 16px;  \n\tfont-weight: 100;\t \n}\n";
+		"body, div {\n    font-family: \"HelveticaNeue\", \"Helvetica Neue\", Helvetica, Arial, \"Lucida Grande\", sans-serif;\n    font-weight: normal;\n}\nbody {\n \tbackground: white;\n}\n\n\n\n.bl-list-item-back {\n \tborder-bottom: 1px solid #EEEEEE;\n}\n\n.bl-list-item-detail {\n\tfont-size: 12px;  \n\tfont-weight: 100;\n\tcolor: #888888;\n}\n\n.bl-list-item-text {\n\tfont-size: 16px;  \n\tfont-weight: 100;\t \n\tcolor: #333333;\n}\n";
 
 /***/ },
 /* 6 */
@@ -4370,86 +4370,103 @@
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function(require) {
 
 		// import dependencies
-		var Surface = __webpack_require__(16);
 		var Base = __webpack_require__(39);
 		var LayoutUtility = __webpack_require__(32);
-		var LayoutDockHelper = __webpack_require__(51);
 
 		//
 		// Bling.List.Item
 		//
 		function Item(options) {
 			Base.call(this, LayoutUtility.combineOptions(Item.defaults, options));
-			this.setLayout(ItemLayout);
 
-			var back = this.back; // create back
-			this.accessory = Item.defaults.factory.accessory(this.options.accessoryType || Item.defaults.accessoryType);
+			// create back out of the box
+			var back = this.back;
+
+			// create accessory when specified
+			this.accessoryType = this.options.accessoryType;
 		};
 		Item.prototype = Object.create(Base.prototype);
 	    Item.prototype.constructor = Item;
 
-	    //
+	     //
 	    // Accessory types
 	    //
 	    Item.AccessoryType = {
-			NONE: 0,
-			CHEVRON: 1,
-			CHECK: 2,
-			CUSTOM: 100
+			NONE: '',
+			CHEVRON: 'chevron',
+			CHECK: 'check',
+			CUSTOM: 'custom'
 		};
 
 		//
 		// Item default and surface creation factory
 		//
 		Item.defaults = {
-			margins: [5, 10, 5, 10],
+			layout: ItemLayout,
 			size: [undefined, 50],
+			margins: [5, 10, 5, 10],
+			back: {
+				classes: ['bl-list-item-back'],
+			},
+			text: {
+				size: [undefined, 18],
+				classes: ['bl-list-item-text']
+			},
+			detail: {
+				size: [undefined, 11],
+				classes: ['bl-list-item-detail']
+			},
 			accessoryType: Item.AccessoryType.NONE,
-			factory: {
-				back: function() {
-					return new Surface({
-						classes: ['bl-list-item-back']
-					});
+			accessory: {
+				chevron: {
+					size: [24, 24],
+					classes: ['icon', 'ion-chevron-right'],
 				},
-				text: function() {
-					return new Surface({
-						size: [undefined, 18],
-						classes: ['bl-list-item-text']
-					});
-				},
-				detail: function() {
-					return new Surface({
-						size: [undefined, 11],
-						classes: ['bl-list-item-detail']
-					});
-				},
-				accessory: function(accessoryType) {
-					switch (accessoryType) {
-						case Item.AccessoryType.CHEVRON:
-							return new Surface({
-								size: [24, 24],
-								classes: ['icon', 'ion-chevron-right'],
-							});
-						case Item.AccessoryType.CHECK:
-							return new Surface({
-								size: [24, 24],
-								classes: ['icon', 'ion-checkmark'],
-							});
-					}
+				check: {
+					size: [24, 24],
+					classes: ['icon', 'ion-checkmark'],
 				}
 			}
 		};
 
 		//
-	    // Setup property getters and setters
+	    // Renderables
 	    //
-	    Base.defineProperty(Item.prototype, 'back', Item.defaults.factory);
-	    Base.defineProperty(Item.prototype, 'text', Item.defaults.factory);
-	    Base.defineProperty(Item.prototype, 'detail', Item.defaults.factory);
-	    Base.defineProperty(Item.prototype, 'accessory');
+	    Base.defineRenderNode(Item.prototype, 'back', true);
+	    Base.defineRenderNode(Item.prototype, 'text', true);
+	    Base.defineRenderNode(Item.prototype, 'detail', true);
+
+	    //
+	    // Accessory & type
+	    //
+	    Object.defineProperty(Item.prototype, 'accessory', {
+			get: function() {
+				return this._dataSource.accessory;
+			},
+			set: function(val) {
+				this.setOptions({ accessoryType: val ? Item.AccessoryType.CUSTOM : Item.AccessoryType.NONE });
+				this._dataSource.accessory = val;
+				this.reflowLayout();
+			}
+		});
+	    Object.defineProperty(Item.prototype, 'accessoryType', {
+			get: function() {
+				return this.options.accessoryType;
+			},
+			set: function(val) {
+				this.setOptions({ accessoryType: val });
+				if (val === Item.AccessoryType.NONE) {
+					this._dataSource.accessory = undefined;
+				}
+				else {
+					this._dataSource.accessory = this.options.createRenderNode.call(this, 'accessory', val);
+				}
+				this.reflowLayout();
+			}
+		});
 
 		//
-		// Item layout
+		// Layout
 		//
 		function ItemLayout(context, options) {
 
@@ -4473,11 +4490,7 @@
 				var accessorySize = context.resolveSize(accessory, size);
 				context.set(accessory, {
 					size: accessorySize,
-					translate: [
-						(left + size[0]) - accessorySize[0],
-						(size[1] - accessorySize[1]) / 2,
-						1
-					]
+					translate: [(left + size[0]) - accessorySize[0], (size[1] - accessorySize[1]) / 2, 1]
 				});
 				size[0] -= (accessorySize[0] + margins[1]);
 	        }
@@ -4490,11 +4503,7 @@
 				var detailSize = context.resolveSize(detail, size);
 				context.set(detail, {
 					size: detailSize,
-					translate: [
-						left,
-						(top + size[1]) - detailSize[1],
-						1
-					]
+					translate: [left, (top + size[1]) - detailSize[1], 1]
 				});
 				size[1] -= detailSize[1];
 	        }
@@ -4505,24 +4514,10 @@
 				var textSize = context.resolveSize(text, size);
 				context.set(text, {
 					size: textSize,
-					translate: [
-						left,
-						top + ((size[1] - textSize[1]) / 2),
-						1
-					]
+					translate: [left, top + ((size[1] - textSize[1]) / 2), 1]
 				});
 	        }
 		}
-
-		/**
-	     * Return size of contained element.
-	     *
-	     * @method getSize
-	     * @return {Array.Number} [width, height]
-	     */
-	    /*Item.prototype.getSize = function() {
-			return this.options.size || Item.defaults.size;
-	    };*/
 
 		return Item;
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
@@ -4546,7 +4541,7 @@
 	    var EventHandler = __webpack_require__(24);
 	    var ElementAllocator = __webpack_require__(41);
 	    var Transform = __webpack_require__(37);
-	    var Transitionable = __webpack_require__(52);
+	    var Transitionable = __webpack_require__(51);
 
 	    var _zeroZero = [0, 0];
 	    var usePrefix = !('perspective' in document.documentElement.style);
@@ -5565,7 +5560,7 @@
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function(require, exports, module) {
 
 	    // import dependencies
-	    var Utility = __webpack_require__(53);
+	    var Utility = __webpack_require__(52);
 
 	    // Define capabilities of this layout function
 	    var capabilities = {
@@ -5692,7 +5687,7 @@
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function(require, exports, module) {
 
 	    // import dependencies
-	    var Utility = __webpack_require__(53);
+	    var Utility = __webpack_require__(52);
 
 	    /**
 	     * @class
@@ -5983,7 +5978,7 @@
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function(require, exports, module) {
 
 	    // import dependencies
-	    var Utility = __webpack_require__(53);
+	    var Utility = __webpack_require__(52);
 	    var Entity = __webpack_require__(43);
 	    var ViewSequence = __webpack_require__(17);
 	    var OptionsManager = __webpack_require__(25);
@@ -5993,7 +5988,7 @@
 	    var LayoutNode = __webpack_require__(34);
 	    var FlowLayoutNode = __webpack_require__(35);
 	    var Transform = __webpack_require__(37);
-	    __webpack_require__(51);
+	    __webpack_require__(55);
 
 	    /**
 	     * @class
@@ -6810,7 +6805,7 @@
 	    var Spring = __webpack_require__(49);
 	    var PhysicsEngine = __webpack_require__(46);
 	    var LayoutNode = __webpack_require__(34);
-	    var Transitionable = __webpack_require__(52);
+	    var Transitionable = __webpack_require__(51);
 
 	    /**
 	     * @class
@@ -7326,7 +7321,7 @@
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function(require, exports, module) {
 
 	    // import dependencies
-	    var LayoutContext = __webpack_require__(54);
+	    var LayoutContext = __webpack_require__(53);
 	    var LayoutUtility = __webpack_require__(32);
 
 	    var MAX_POOL_SIZE = 100;
@@ -8820,6 +8815,7 @@
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function(require) {
 
 		// import dependencies
+		var Surface = __webpack_require__(16);
 		var LayoutUtility = __webpack_require__(32);
 		var LayoutController = __webpack_require__(33);
 
@@ -8836,11 +8832,11 @@
 	    //
 	    // Setup property getters and setters
 	    //
-	    Base.defineProperty = function(prototype, prop, factory) {
+	    Base.defineRenderNode = function(prototype, prop, autoCreate) {
 			Object.defineProperty(prototype, prop, {
 				get: function() {
-					if (factory && !this._dataSource[prop]) {
-						this._dataSource[prop] = factory[prop]();
+					if (!this._dataSource[prop] && autoCreate) {
+						this._dataSource[prop] = this.options.createRenderNode.call(this, prop);
 						this._dataSource[prop].pipe(this._eventOutput);
 						this.reflowLayout();
 					}
@@ -8856,6 +8852,11 @@
 			});
 	    }
 
+	    Base.createRenderNode = function(prop, subProp) {
+			var options = subProp ? this.options[prop][subProp] : this.options[prop];
+			return new Surface(options);
+	    }
+
 		//
 		// Item default and surface creation factory
 		//
@@ -8864,6 +8865,7 @@
 			insertSpec: {opacity: 0},
 			removeSpec: {opacity: 0},
 			size: [undefined, undefined],
+			createRenderNode: Base.createRenderNode
 		};
 
 		/**
@@ -8895,7 +8897,7 @@
 
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function(require, exports, module) {
 	    var Entity = __webpack_require__(43);
-	    var SpecParser = __webpack_require__(55);
+	    var SpecParser = __webpack_require__(54);
 
 	    /**
 	     * A wrapper for inserting a renderable component (like a Modifer or
@@ -11383,306 +11385,6 @@
 /* 51 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var __WEBPACK_AMD_DEFINE_RESULT__;/**
-	 * This Source Code is licensed under the MIT license. If a copy of the
-	 * MIT-license was not distributed with this file, You can obtain one at:
-	 * http://opensource.org/licenses/mit-license.html.
-	 *
-	 * @author: Hein Rutjes (IjzerenHein)
-	 * @license MIT
-	 * @copyright Gloey Apps, 2014
-	 */
-
-	/*global define*/
-
-	/**
-	 * LayoutDockHelper helps positioning nodes using docking principles.
-	 *
-	 * **Example:**
-	 *
-	 * ```javascript
-	 * var LayoutDockHelper = require('famous-flex/helpers/LayoutDockHelper');
-	 *
-	 * function HeaderFooterLayout(context, options) {
-	 *   var dock = new LayoutDockHelper(context);
-	 *   dock.top('header', options.headerHeight);
-	 *   dock.bottom('footer', options.footerHeight);
-	 *   dock.fill('content');
-	 * };
-	 * ```
-	 *
-	 * You can also use layout-literals to create layouts using docking semantics:
-	 *
-	 * ```javascript
-	 * var layoutController = new LayoutController({
-	 *   layout: {dock: [
-	 *     ['top', 'header', 40],
-	 *     ['bottom', 'footer', 40, 1], // z-index +1
-	 *     ['fill', 'content']
-	 *   ]},
-	 *   dataSource: {
-	 *     header: new Surface({content: 'header'}),
-	 *     footer: new Surface({content: 'footer'}),
-	 *     content: new Surface({content: 'content'}),
-	 *   }
-	 * });
-	 * ```
-	 *
-	 * @module
-	 */
-	!(__WEBPACK_AMD_DEFINE_RESULT__ = function(require, exports, module) {
-
-	    // import dependencies
-	    var LayoutUtility = __webpack_require__(32);
-
-	    /**
-	     * @class
-	     * @param {LayoutContext} context layout-context
-	     * @param {Object} [options] additional options
-	     * @param {Object} [options.margins] margins to start out with (default: 0px)
-	     * @param {Number} [options.translateZ] z-index to use when translating objects (default: 0)
-	     * @alias module:LayoutDockHelper
-	     */
-	    function LayoutDockHelper(context, options) {
-	        var size = context.size;
-	        this._size = size;
-	        this._context = context;
-	        this._options = options;
-	        this._z = (options && options.translateZ) ? options.translateZ : 0;
-	        if (options && options.margins) {
-	            var margins = LayoutUtility.normalizeMargins(options.margins);
-	            this._left = margins[3];
-	            this._top = margins[0];
-	            this._right = size[0] - margins[1];
-	            this._bottom = size[1] - margins[2];
-	        }
-	        else {
-	            this._left = 0;
-	            this._top = 0;
-	            this._right = size[0];
-	            this._bottom = size[1];
-	        }
-	    }
-
-	    /**
-	     * Parses the layout-rules based on a JSON data object.
-	     * The object should be an array with the following syntax:
-	     * `[[rule, node, value, z], [rule, node, value, z], ...]`
-	     *
-	     * **Example:**
-	     *
-	     * ```JSON
-	     * [
-	     *   ['top', 'header', 50],
-	     *   ['bottom', 'footer', 50, 10], // z-index: 10
-	     *   ['margins', [10, 5]], // marginate remaining space: 10px top/bottom, 5px left/right
-	     *   ['fill', 'content']
-	     * ]
-	     * ```
-	     *
-	     * @param {Object} data JSON object
-	     */
-	    LayoutDockHelper.prototype.parse = function(data) {
-	        for (var i = 0; i < data.length; i++) {
-	            var rule = data[i];
-	            var value = (rule.length >= 3) ? rule[2] : undefined;
-	            if (rule[0] === 'top') {
-	                this.top(rule[1], value, (rule.length >=4) ? rule[3] : undefined);
-	            } else if (rule[0] === 'left') {
-	                this.left(rule[1], value, (rule.length >=4) ? rule[3] : undefined);
-	            } else if (rule[0] === 'right') {
-	                this.right(rule[1], value, (rule.length >=4) ? rule[3] : undefined);
-	            } else if (rule[0] === 'bottom') {
-	                this.bottom(rule[1], value, (rule.length >=4) ? rule[3] : undefined);
-	            } else if (rule[0] === 'fill') {
-	                this.fill(rule[1], (rule.length >=3) ? rule[2] : undefined);
-	            } else if (rule[0] === 'margins') {
-	                this.margins(rule[1]);
-	            }
-	        }
-	    };
-
-	    /**
-	     * Dock the node to the top.
-	     *
-	     * @param {LayoutNode|String} [node] layout-node to dock, when ommited the `height` argument argument is used for padding
-	     * @param {Number} [height] height of the layout-node, when ommited the height of the node is used
-	     * @param {Number} [z] z-index to use for the node
-	     * @return {LayoutDockHelper} this
-	     */
-	    LayoutDockHelper.prototype.top = function(node, height, z) {
-	        if (height instanceof Array) {
-	            height = height[1];
-	        }
-	        if (height === undefined) {
-	            var size = this._context.resolveSize(node, [this._right - this._left, this._bottom - this._top]);
-	            height = size[1];
-	        }
-	        this._context.set(node, {
-	            size: [this._right - this._left, height],
-	            origin: [0, 0],
-	            align: [0, 0],
-	            translate: [this._left, this._top, (z === undefined) ? this._z : z]
-	        });
-	        this._top += height;
-	        return this;
-	    };
-
-	    /**
-	     * Dock the node to the left
-	     *
-	     * @param {LayoutNode|String} [node] layout-node to dock, when ommited the `width` argument argument is used for padding
-	     * @param {Number} [width] width of the layout-node, when ommited the width of the node is used
-	     * @param {Number} [z] z-index to use for the node
-	     * @return {LayoutDockHelper} this
-	     */
-	    LayoutDockHelper.prototype.left = function(node, width, z) {
-	        if (width instanceof Array) {
-	            width = width[0];
-	        }
-	        if (width === undefined) {
-	            var size = this._context.resolveSize(node, [this._right - this._left, this._bottom - this._top]);
-	            width = size[0];
-	        }
-	        this._context.set(node, {
-	            size: [width, this._bottom - this._top],
-	            origin: [0, 0],
-	            align: [0, 0],
-	            translate: [this._left, this._top, (z === undefined) ? this._z : z]
-	        });
-	        this._left += width;
-	        return this;
-	    };
-
-	    /**
-	     * Dock the node to the bottom
-	     *
-	     * @param {LayoutNode|String} [node] layout-node to dock, when ommited the `height` argument argument is used for padding
-	     * @param {Number} [height] height of the layout-node, when ommited the height of the node is used
-	     * @param {Number} [z] z-index to use for the node
-	     * @return {LayoutDockHelper} this
-	     */
-	    LayoutDockHelper.prototype.bottom = function(node, height, z) {
-	        if (height instanceof Array) {
-	            height = height[1];
-	        }
-	        if (height === undefined) {
-	            var size = this._context.resolveSize(node, [this._right - this._left, this._bottom - this._top]);
-	            height = size[1];
-	        }
-	        this._context.set(node, {
-	            size: [this._right - this._left, height],
-	            origin: [0, 1],
-	            align: [0, 1],
-	            translate: [this._left, -(this._size[1] - this._bottom), (z === undefined) ? this._z : z]
-	        });
-	        this._bottom -= height;
-	        return this;
-	    };
-
-	    /**
-	     * Dock the node to the right.
-	     *
-	     * @param {LayoutNode|String} [node] layout-node to dock, when ommited the `width` argument argument is used for padding
-	     * @param {Number} [width] width of the layout-node, when ommited the width of the node is used
-	     * @param {Number} [z] z-index to use for the node
-	     * @return {LayoutDockHelper} this
-	     */
-	    LayoutDockHelper.prototype.right = function(node, width, z) {
-	        if (width instanceof Array) {
-	            width = width[0];
-	        }
-	        if (node) {
-	            if (width === undefined) {
-	                var size = this._context.resolveSize(node, [this._right - this._left, this._bottom - this._top]);
-	                width = size[0];
-	            }
-	            this._context.set(node, {
-	                size: [width, this._bottom - this._top],
-	                origin: [1, 0],
-	                align: [1, 0],
-	                translate: [-(this._size[0] - this._right), this._top, (z === undefined) ? this._z : z]
-	            });
-	        }
-	        if (width) {
-	            this._right -= width;
-	        }
-	        return this;
-	    };
-
-	    /**
-	     * Fills the node to the remaining content.
-	     *
-	     * @param {LayoutNode|String} node layout-node to dock
-	     * @param {Number} [z] z-index to use for the node
-	     * @return {LayoutDockHelper} this
-	     */
-	    LayoutDockHelper.prototype.fill = function(node, z) {
-	        this._context.set(node, {
-	            size: [this._right - this._left, this._bottom - this._top],
-	            translate: [this._left, this._top, (z === undefined) ? this._z : z]
-	        });
-	        return this;
-	    };
-
-	    /**
-	     * Applies indent margins to the remaining content.
-	     *
-	     * @param {Number|Array} margins margins shorthand (e.g. '5', [10, 10], [5, 10, 5, 10])
-	     * @return {LayoutDockHelper} this
-	     */
-	    LayoutDockHelper.prototype.margins = function(margins) {
-	        margins = LayoutUtility.normalizeMargins(margins);
-	        this._left += margins[3];
-	        this._top += margins[0];
-	        this._right -= margins[1];
-	        this._bottom -= margins[2];
-	        return this;
-	    };
-
-	    /**
-	     * Returns the remaining content size.
-	     *
-	     * @return {Size} remaining size
-	     */
-	    LayoutDockHelper.prototype.size = function() {
-	        return [
-	            this._right - this._left,
-	            this._bottom - this._top
-	        ];
-	    };
-
-	    /**
-	     * Centers the node in the remaining content.
-	     *
-	     * @return {LayoutDockHelper} this
-	     */
-	    LayoutDockHelper.prototype.center = function(node, size, z) {
-	        if (!size) {
-	            size = this._context.resolveSize(node, [this._right - this._left, this._bottom - this._top]);
-	        }
-	        this._context.set(node, {
-	            size: size,
-	            translate: [
-	                this._left + (((this._right - this._left) - size[0]) / 2),
-	                this._top + (((this._bottom - this._top) - size[1]) / 2),
-	                (z === undefined) ? this._z : z
-	            ]
-	        });
-	        return this;
-	    };
-
-	    // Register the helper
-	    LayoutUtility.registerHelper('dock', LayoutDockHelper);
-
-	    module.exports = LayoutDockHelper;
-	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-
-
-/***/ },
-/* 52 */
-/***/ function(module, exports, __webpack_require__) {
-
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* This Source Code Form is subject to the terms of the Mozilla Public
 	 * License, v. 2.0. If a copy of the MPL was not distributed with this
 	 * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -11908,7 +11610,7 @@
 
 
 /***/ },
-/* 53 */
+/* 52 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* This Source Code Form is subject to the terms of the Mozilla Public
@@ -12035,7 +11737,7 @@
 
 
 /***/ },
-/* 54 */
+/* 53 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/**
@@ -12305,7 +12007,7 @@
 
 
 /***/ },
-/* 55 */
+/* 54 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* This Source Code Form is subject to the terms of the Mozilla Public
@@ -12487,6 +12189,274 @@
 
 
 /***/ },
+/* 55 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_RESULT__;/**
+	 * This Source Code is licensed under the MIT license. If a copy of the
+	 * MIT-license was not distributed with this file, You can obtain one at:
+	 * http://opensource.org/licenses/mit-license.html.
+	 *
+	 * @author: Hein Rutjes (IjzerenHein)
+	 * @license MIT
+	 * @copyright Gloey Apps, 2014
+	 */
+
+	/*global define*/
+
+	/**
+	 * LayoutDockHelper helps positioning nodes using docking principles.
+	 *
+	 * **Example:**
+	 *
+	 * ```javascript
+	 * var LayoutDockHelper = require('famous-flex/helpers/LayoutDockHelper');
+	 *
+	 * function HeaderFooterLayout(context, options) {
+	 *   var dock = new LayoutDockHelper(context);
+	 *   dock.top('header', options.headerHeight);
+	 *   dock.bottom('footer', options.footerHeight);
+	 *   dock.fill('content');
+	 * };
+	 * ```
+	 *
+	 * You can also use layout-literals to create layouts using docking semantics:
+	 *
+	 * ```javascript
+	 * var layoutController = new LayoutController({
+	 *   layout: {dock: [
+	 *     ['top', 'header', 40],
+	 *     ['bottom', 'footer', 40, 1], // z-index +1
+	 *     ['fill', 'content']
+	 *   ]},
+	 *   dataSource: {
+	 *     header: new Surface({content: 'header'}),
+	 *     footer: new Surface({content: 'footer'}),
+	 *     content: new Surface({content: 'content'}),
+	 *   }
+	 * });
+	 * ```
+	 *
+	 * @module
+	 */
+	!(__WEBPACK_AMD_DEFINE_RESULT__ = function(require, exports, module) {
+
+	    // import dependencies
+	    var LayoutUtility = __webpack_require__(32);
+
+	    /**
+	     * @class
+	     * @param {LayoutContext} context layout-context
+	     * @param {Object} [options] additional options
+	     * @param {Object} [options.margins] margins to start out with (default: 0px)
+	     * @param {Number} [options.translateZ] z-index to use when translating objects (default: 0)
+	     * @alias module:LayoutDockHelper
+	     */
+	    function LayoutDockHelper(context, options) {
+	        var size = context.size;
+	        this._size = size;
+	        this._context = context;
+	        this._options = options;
+	        this._z = (options && options.translateZ) ? options.translateZ : 0;
+	        if (options && options.margins) {
+	            var margins = LayoutUtility.normalizeMargins(options.margins);
+	            this._left = margins[3];
+	            this._top = margins[0];
+	            this._right = size[0] - margins[1];
+	            this._bottom = size[1] - margins[2];
+	        }
+	        else {
+	            this._left = 0;
+	            this._top = 0;
+	            this._right = size[0];
+	            this._bottom = size[1];
+	        }
+	    }
+
+	    /**
+	     * Parses the layout-rules based on a JSON data object.
+	     * The object should be an array with the following syntax:
+	     * `[[rule, node, value, z], [rule, node, value, z], ...]`
+	     *
+	     * **Example:**
+	     *
+	     * ```JSON
+	     * [
+	     *   ['top', 'header', 50],
+	     *   ['bottom', 'footer', 50, 10], // z-index: 10
+	     *   ['margins', [10, 5]], // marginate remaining space: 10px top/bottom, 5px left/right
+	     *   ['fill', 'content']
+	     * ]
+	     * ```
+	     *
+	     * @param {Object} data JSON object
+	     */
+	    LayoutDockHelper.prototype.parse = function(data) {
+	        for (var i = 0; i < data.length; i++) {
+	            var rule = data[i];
+	            var value = (rule.length >= 3) ? rule[2] : undefined;
+	            if (rule[0] === 'top') {
+	                this.top(rule[1], value, (rule.length >=4) ? rule[3] : undefined);
+	            } else if (rule[0] === 'left') {
+	                this.left(rule[1], value, (rule.length >=4) ? rule[3] : undefined);
+	            } else if (rule[0] === 'right') {
+	                this.right(rule[1], value, (rule.length >=4) ? rule[3] : undefined);
+	            } else if (rule[0] === 'bottom') {
+	                this.bottom(rule[1], value, (rule.length >=4) ? rule[3] : undefined);
+	            } else if (rule[0] === 'fill') {
+	                this.fill(rule[1], (rule.length >=3) ? rule[2] : undefined);
+	            } else if (rule[0] === 'margins') {
+	                this.margins(rule[1]);
+	            }
+	        }
+	    };
+
+	    /**
+	     * Dock the node to the top.
+	     *
+	     * @param {LayoutNode|String} [node] layout-node to dock, when ommited the `height` argument argument is used for padding
+	     * @param {Number} [height] height of the layout-node, when ommited the height of the node is used
+	     * @param {Number} [z] z-index to use for the node
+	     * @return {LayoutDockHelper} this
+	     */
+	    LayoutDockHelper.prototype.top = function(node, height, z) {
+	        if (height instanceof Array) {
+	            height = height[1];
+	        }
+	        if (height === undefined) {
+	            var size = this._context.resolveSize(node, [this._right - this._left, this._bottom - this._top]);
+	            height = size[1];
+	        }
+	        this._context.set(node, {
+	            size: [this._right - this._left, height],
+	            origin: [0, 0],
+	            align: [0, 0],
+	            translate: [this._left, this._top, (z === undefined) ? this._z : z]
+	        });
+	        this._top += height;
+	        return this;
+	    };
+
+	    /**
+	     * Dock the node to the left
+	     *
+	     * @param {LayoutNode|String} [node] layout-node to dock, when ommited the `width` argument argument is used for padding
+	     * @param {Number} [width] width of the layout-node, when ommited the width of the node is used
+	     * @param {Number} [z] z-index to use for the node
+	     * @return {LayoutDockHelper} this
+	     */
+	    LayoutDockHelper.prototype.left = function(node, width, z) {
+	        if (width instanceof Array) {
+	            width = width[0];
+	        }
+	        if (width === undefined) {
+	            var size = this._context.resolveSize(node, [this._right - this._left, this._bottom - this._top]);
+	            width = size[0];
+	        }
+	        this._context.set(node, {
+	            size: [width, this._bottom - this._top],
+	            origin: [0, 0],
+	            align: [0, 0],
+	            translate: [this._left, this._top, (z === undefined) ? this._z : z]
+	        });
+	        this._left += width;
+	        return this;
+	    };
+
+	    /**
+	     * Dock the node to the bottom
+	     *
+	     * @param {LayoutNode|String} [node] layout-node to dock, when ommited the `height` argument argument is used for padding
+	     * @param {Number} [height] height of the layout-node, when ommited the height of the node is used
+	     * @param {Number} [z] z-index to use for the node
+	     * @return {LayoutDockHelper} this
+	     */
+	    LayoutDockHelper.prototype.bottom = function(node, height, z) {
+	        if (height instanceof Array) {
+	            height = height[1];
+	        }
+	        if (height === undefined) {
+	            var size = this._context.resolveSize(node, [this._right - this._left, this._bottom - this._top]);
+	            height = size[1];
+	        }
+	        this._context.set(node, {
+	            size: [this._right - this._left, height],
+	            origin: [0, 1],
+	            align: [0, 1],
+	            translate: [this._left, -(this._size[1] - this._bottom), (z === undefined) ? this._z : z]
+	        });
+	        this._bottom -= height;
+	        return this;
+	    };
+
+	    /**
+	     * Dock the node to the right.
+	     *
+	     * @param {LayoutNode|String} [node] layout-node to dock, when ommited the `width` argument argument is used for padding
+	     * @param {Number} [width] width of the layout-node, when ommited the width of the node is used
+	     * @param {Number} [z] z-index to use for the node
+	     * @return {LayoutDockHelper} this
+	     */
+	    LayoutDockHelper.prototype.right = function(node, width, z) {
+	        if (width instanceof Array) {
+	            width = width[0];
+	        }
+	        if (node) {
+	            if (width === undefined) {
+	                var size = this._context.resolveSize(node, [this._right - this._left, this._bottom - this._top]);
+	                width = size[0];
+	            }
+	            this._context.set(node, {
+	                size: [width, this._bottom - this._top],
+	                origin: [1, 0],
+	                align: [1, 0],
+	                translate: [-(this._size[0] - this._right), this._top, (z === undefined) ? this._z : z]
+	            });
+	        }
+	        if (width) {
+	            this._right -= width;
+	        }
+	        return this;
+	    };
+
+	    /**
+	     * Fills the node to the remaining content.
+	     *
+	     * @param {LayoutNode|String} node layout-node to dock
+	     * @param {Number} [z] z-index to use for the node
+	     * @return {LayoutDockHelper} this
+	     */
+	    LayoutDockHelper.prototype.fill = function(node, z) {
+	        this._context.set(node, {
+	            size: [this._right - this._left, this._bottom - this._top],
+	            translate: [this._left, this._top, (z === undefined) ? this._z : z]
+	        });
+	        return this;
+	    };
+
+	    /**
+	     * Applies indent margins to the remaining content.
+	     *
+	     * @param {Number|Array} margins margins shorthand (e.g. '5', [10, 10], [5, 10, 5, 10])
+	     * @return {LayoutDockHelper} this
+	     */
+	    LayoutDockHelper.prototype.margins = function(margins) {
+	        margins = LayoutUtility.normalizeMargins(margins);
+	        this._left += margins[3];
+	        this._top += margins[0];
+	        this._right -= margins[1];
+	        this._bottom -= margins[2];
+	        return this;
+	    };
+
+	    // Register the helper
+	    LayoutUtility.registerHelper('dock', LayoutDockHelper);
+
+	    module.exports = LayoutDockHelper;
+	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
 /* 56 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -12567,7 +12537,7 @@
 	 */
 
 	!(__WEBPACK_AMD_DEFINE_RESULT__ = function(require, exports, module) {
-	    var Utility = __webpack_require__(53);
+	    var Utility = __webpack_require__(52);
 
 	    /**
 	     * Transition meta-method to support transitioning multiple

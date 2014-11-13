@@ -14,6 +14,7 @@
 define(function(require) {
 
 	// import dependencies
+	var Surface = require('famous/core/Surface');
 	var LayoutUtility = require('famous-flex/LayoutUtility');
 	var LayoutController = require('famous-flex/LayoutController');
 
@@ -30,11 +31,11 @@ define(function(require) {
     //
     // Setup property getters and setters
     //
-    Base.defineProperty = function(prototype, prop, factory) {
+    Base.defineRenderNode = function(prototype, prop, autoCreate) {
 		Object.defineProperty(prototype, prop, {
 			get: function() {
-				if (factory && !this._dataSource[prop]) {
-					this._dataSource[prop] = factory[prop]();
+				if (!this._dataSource[prop] && autoCreate) {
+					this._dataSource[prop] = this.options.createRenderNode.call(this, prop);
 					this._dataSource[prop].pipe(this._eventOutput);
 					this.reflowLayout();
 				}
@@ -50,6 +51,11 @@ define(function(require) {
 		});
     }
 
+    Base.createRenderNode = function(prop, subProp) {
+		var options = subProp ? this.options[prop][subProp] : this.options[prop];
+		return new Surface(options);
+    }
+
 	//
 	// Item default and surface creation factory
 	//
@@ -58,6 +64,7 @@ define(function(require) {
 		insertSpec: {opacity: 0},
 		removeSpec: {opacity: 0},
 		size: [undefined, undefined],
+		createRenderNode: Base.createRenderNode
 	};
 
 	/**

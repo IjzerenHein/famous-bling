@@ -1,7 +1,7 @@
 famous-bling
 ============
 
-Surface templates &amp; styles similar to bootstrap for famo.us
+View templates (with animations) to jumpstart your project or for production use.
 
 **THIS PROJECT IS UNDER CONSTRUCTION**
 
@@ -14,6 +14,18 @@ Install using bower or npm:
 
 	npm install famous-bling
 
+Create a Bling List Item:
+
+```javascript
+var Bling = require('famous-bling/src/Bling');
+
+// create a list-item containing a text, detail-text and a right chevron icon
+var listItem = new Bling.List.Item();
+listItem.accessoryType = 'chevron'; // Bling.List.Item.AccessoryType.CHEVRON;
+listItem.text.setContent('this is the text');
+listItem.detail.setContent('this is the detail text');
+viewSequence.push(listItem); // add to scrollview sequence
+```
 
 ## Contribute
 

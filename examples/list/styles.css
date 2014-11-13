@@ -15,9 +15,11 @@ body {
 .bl-list-item-detail {
 	font-size: 12px;  
 	font-weight: 100;
+	color: #888888;
 }
 
 .bl-list-item-text {
 	font-size: 16px;  
 	font-weight: 100;	 
+	color: #333333;
 }
